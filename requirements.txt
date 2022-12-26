@@ -1,0 +1,10 @@
+# Standard-Libaries
+python-dotenv
+
+# Database Libaries
+pydantic
+tortoise-orm
+
+# Basic Fast-Api App
+uvicorn
+fastapi
