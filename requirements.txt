@@ -3,8 +3,12 @@ python-dotenv
 
 # Database Libaries
 pydantic
+pydantic[email]
 tortoise-orm
 
 # Basic Fast-Api App
 uvicorn
 fastapi
+
+# Security
+passlib[bcrypt]

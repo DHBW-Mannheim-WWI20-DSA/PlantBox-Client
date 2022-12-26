@@ -1,11 +1,12 @@
 from fastapi import FastAPI
 from tortoise.contrib.fastapi import register_tortoise
 from server.models.users import *
-from server.routers import basic
+from server.routers import basic, users
 
 app = FastAPI()
 
 app.include_router(basic.router)
+app.include_router(users.router)
 
 
 register_tortoise(
