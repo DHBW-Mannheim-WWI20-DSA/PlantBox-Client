@@ -26,7 +26,7 @@ async def get_user(uuid: uuid.UUID):
 
 # Create user
 @router.post("/", response_model=User_Pydantic)
-async def register_user(user: UserRegister_Pydantic):
+async def create_user(user: UserRegister_Pydantic):
     user_obj = await User.create(**user.dict(exclude_unset=True), hash_password=get_password_hash(user.password))
     return await User_Pydantic.from_tortoise_orm(user_obj)
 
