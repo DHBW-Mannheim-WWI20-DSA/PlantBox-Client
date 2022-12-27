@@ -17,15 +17,15 @@ router = APIRouter(
 @router.get("/", response_model=List[User_Pydantic])
 async def get_all_users(current_user: User = Depends(get_current_active_user)):
     if current_user.user_role != UserRole.admin:
-        raise HTTPException(status_code=403, detail="You are not allowed to access this resource")
+        raise HTTPException(status_code=400, detail="Not authorized")
     return await User_Pydantic.from_queryset(User.all())
 
 
 # Get user by uuid
 @router.get("/{uuid}", response_model=User_Pydantic)
 async def get_user(uuid: uuid.UUID, current_user: User = Depends(get_current_active_user)):
-    if current_user.role != UserRole.admin:
-        raise HTTPException(status_code=403, detail="You do not have permission to access this resource")
+    if current_user.user_role != UserRole.admin:
+        raise HTTPException(status_code=400, detail="Not authorized")
     return await User_Pydantic.from_queryset_single(User.get(uuid=uuid))
 
 
@@ -39,8 +39,8 @@ async def create_user(user: UserRegister_Pydantic):
 # Update user
 @router.put("/{uuid}", response_model=User_Pydantic)
 async def update_user(uuid: uuid.UUID, user: UserUpdate_Pydantic, current_user: User = Depends(get_current_active_user)):
-    if current_user.role != UserRole.admin and current_user.uuid != uuid:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="You are not allowed to update this user")
+    if current_user.user_role != UserRole.admin:
+        raise HTTPException(status_code=400, detail="Not authorized")
     hashed_value = get_password_hash(user.password) if user.password else None
     await User.filter(uuid=uuid).update(**user.dict(exclude_unset=True, exclude={"password"}),
                                         hash_password=hashed_value)
@@ -50,8 +50,8 @@ async def update_user(uuid: uuid.UUID, user: UserUpdate_Pydantic, current_user: 
 # Delete user
 @router.delete("/{uuid}", response_model=str)
 async def delete_user(uuid: uuid.UUID, current_user: User = Depends(get_current_active_user)):
-    if current_user.role != UserRole.admin and current_user.uuid != uuid:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="You are not allowed to delete this user")
+    if current_user.user_role != UserRole.admin:
+        raise HTTPException(status_code=400, detail="Not authorized")
     deleted_count = await User.filter(uuid=uuid).delete()
     if not deleted_count:
         raise HTTPException(status_code=404, detail=f"User {uuid} not found")

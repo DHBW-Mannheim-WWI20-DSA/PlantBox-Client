@@ -28,10 +28,10 @@ def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None
     return encoded_jwt
 
 
-async def get_user_from_token(token: str = Depends(oauth2_scheme)):
+async def get_current_user(token: str = Depends(oauth2_scheme)):
     # Load the secret key from the environment
     load_dotenv()
-    secret_key = os.getenv("JWT")
+    secret_key = os.getenv("JWT_SECRET_KEY"),
     algorithm = os.getenv("JWT_ALGORITHM") if os.getenv("JWT_ALGORITHM") else "HS256"
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -43,17 +43,19 @@ async def get_user_from_token(token: str = Depends(oauth2_scheme)):
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception
-        uuid_val: str = payload.get("uuid")
-        token_data = TokenData(username=username, uuid=uuid_val)
+        uuid_str: str = payload.get("uuid")
+        if uuid_str is None:
+            raise credentials_exception
+        token_data = TokenData(username=username, uuid=uuid_str)
     except JWTError:
         raise credentials_exception
-    user = User_Pydantic.from_queryset_single(User.get(uuid=uuid.UUID(token_data.uuid)))
+    user = await User.filter(uuid=uuid.UUID(token_data.uuid)).get_or_none()
     if user is None:
         raise credentials_exception
     return user
 
 
-async def get_current_active_user(current_user: User = Depends(get_user_from_token)):
+async def get_current_active_user(current_user: User = Depends(get_current_user)):
     if current_user.is_active is False:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
@@ -88,13 +90,13 @@ async def login_user(user: OAuth2PasswordRequestForm = Depends()):
 
 
 # Register user
-@router.post("/register", response_model=User_Pydantic)
-async def register_user(user: UserRegister_Pydantic):
-    user_obj = await User.get(username=user.username)
-    if user_obj:
-        raise HTTPException(status_code=400, detail="Username already registered")
-    user_obj = await User.get(email=user.email)
-    if user_obj:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    user_obj = await User.create(**user.dict(exclude_unset=True), hash_password=get_password_hash(user.password))
-    return await User_Pydantic.from_tortoise_orm(user_obj)
+#@router.post("/register", response_model=User_Pydantic)
+#async def register_user(user: UserRegister_Pydantic):
+#    user_obj = await User.get(username=user.username)
+#    if user_obj:
+#        raise HTTPException(status_code=400, detail="Username already registered")
+#    user_obj = await User.get(email=user.email)
+#    if user_obj:
+#        raise HTTPException(status_code=400, detail="Email already registered")
+#    user_obj = await User.create(**user.dict(exclude_unset=True), hash_password=get_password_hash(user.password))
+#    return await User_Pydantic.from_tortoise_orm(user_obj)
