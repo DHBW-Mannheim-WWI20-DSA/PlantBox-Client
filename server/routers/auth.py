@@ -1,8 +1,63 @@
+import os
+import uuid
+from datetime import datetime, timedelta
+from typing import Union
+from dotenv import load_dotenv
+from fastapi.security import OAuth2PasswordRequestForm
+from jose import JWTError, jwt
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import RedirectResponse
+from server.models.token import Token, TokenData
 from server.models.users import UserRole, User, User_Pydantic, UserRegister_Pydantic, UserLogin_Pydantic
-from server.routers.users import create_user
-from server.dependencies import verify_password
+from server.dependencies import verify_password, oauth2_scheme, get_password_hash
+
+
+# Helper function to create access token
+def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None):
+    # Load the secret key from the environment
+    load_dotenv()
+    secret_key = os.getenv("JWT_SECRET_KEY")
+    algorithm = os.getenv("JWT_ALGORITHM") if os.getenv("JWT_ALGORITHM") else "HS256"
+
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, secret_key, algorithm=algorithm)
+    return encoded_jwt
+
+
+async def get_user_from_token(token: str = Depends(oauth2_scheme)):
+    # Load the secret key from the environment
+    load_dotenv()
+    secret_key = os.getenv("JWT")
+    algorithm = os.getenv("JWT_ALGORITHM") if os.getenv("JWT_ALGORITHM") else "HS256"
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, secret_key, algorithms=[algorithm])
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+        uuid_val: str = payload.get("uuid")
+        token_data = TokenData(username=username, uuid=uuid_val)
+    except JWTError:
+        raise credentials_exception
+    user = User_Pydantic.from_queryset_single(User.get(uuid=uuid.UUID(token_data.uuid)))
+    if user is None:
+        raise credentials_exception
+    return user
+
+
+async def get_current_active_user(current_user: User = Depends(get_user_from_token)):
+    if current_user.is_active is False:
+        raise HTTPException(status_code=400, detail="Inactive user")
+    return current_user
+
 
 router = APIRouter(
     prefix="/auth",
@@ -12,14 +67,24 @@ router = APIRouter(
 
 
 # Login user
-@router.post("/login", response_model=User_Pydantic)
-async def login_user(user: UserLogin_Pydantic):
+@router.post("/login", response_model=Token)
+async def login_user(user: OAuth2PasswordRequestForm = Depends()):
     user_obj = await User.get(username=user.username)
     if not user_obj:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     if not verify_password(user.password, user_obj.hash_password):
         raise HTTPException(status_code=400, detail="Incorrect password")
-    return await User_Pydantic.from_tortoise_orm(user_obj)
+    load_dotenv()
+    access_token_expires = timedelta(hours=int(os.getenv("JWT_EXP_DELTA_HOURS")))
+    claims = {"sub": user_obj.username, "uuid": str(user_obj.uuid)}
+    access_token = create_access_token(
+        data=claims, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
 
 
 # Register user
@@ -28,4 +93,8 @@ async def register_user(user: UserRegister_Pydantic):
     user_obj = await User.get(username=user.username)
     if user_obj:
         raise HTTPException(status_code=400, detail="Username already registered")
-    return await create_user(user)
+    user_obj = await User.get(email=user.email)
+    if user_obj:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    user_obj = await User.create(**user.dict(exclude_unset=True), hash_password=get_password_hash(user.password))
+    return await User_Pydantic.from_tortoise_orm(user_obj)
