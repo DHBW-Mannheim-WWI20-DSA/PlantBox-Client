@@ -9,6 +9,7 @@ tortoise-orm
 # Basic Fast-Api App
 uvicorn
 fastapi
+python-multipart
 
 # Security
 passlib[bcrypt]
