@@ -14,3 +14,4 @@ python-multipart
 # Security
 passlib[bcrypt]
 python-jose[cryptography]
+pywinusb
