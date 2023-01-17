@@ -21,15 +21,15 @@ def load_auth_data():
     env_path = pathlib.Path.cwd()
     env_path = env_path.joinpath('.env')
     load_dotenv(dotenv_path=env_path)
-    data_dict = AuthData(
+    connected_server = ConnectServer(
         username=os.getenv('ACCOUNT_NAME') if os.getenv('ACCOUNT_NAME') else None,
         password=os.getenv('ACCOUNT_PASSWORD') if os.getenv('ACCOUNT_PASSWORD') else None,
     )
-    return data_dict
+    return connected_server
 
 
 # Pydantic Model for Authentication Data
-class AuthData(pydantic.BaseModel):
+class ConnectServer(pydantic.BaseModel):
     username: str
     password: str
     client_id: Union[uuid.UUID, None] = None
@@ -80,14 +80,14 @@ class AuthData(pydantic.BaseModel):
         set_key(dotenv_path=env_path, key_to_set='CLIENT_ID', value_to_set=str(self.client_id))
         set_key(dotenv_path=env_path, key_to_set='CLIENT_SECRET', value_to_set=self.client_secret)
 
-    # Output the AuthData as a JSON String
+    # Output the ConnectServer as a JSON String
     def __str__(self):
         return json.dumps(self.dict())
 
 
 if __name__ == '__main__':
-    auth_data = load_auth_data()
-    auth_data.get_bearer_token()
-    print(auth_data.bearer_token)
-    auth_data.register_client()
-    print(auth_data.client_id, auth_data.client_secret)
+    connected_server = load_auth_data()
+    connected_server.get_bearer_token()
+    print(connected_server.bearer_token)
+    connected_server.register_client()
+    print(connected_server.client_id, connected_server.client_secret)

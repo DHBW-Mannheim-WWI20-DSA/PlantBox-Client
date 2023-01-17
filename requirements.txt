@@ -1,8 +1,9 @@
 # Standard-Libaries
 python-dotenv
+requests
+RPi.GPIO
 
 # Database Libaries
-pydantic
 pydantic[email]
 tortoise-orm
 
