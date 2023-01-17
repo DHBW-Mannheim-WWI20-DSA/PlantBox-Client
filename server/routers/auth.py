@@ -7,6 +7,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from fastapi import APIRouter, Depends, HTTPException, status
 from server.models.token import Token, TokenData
+from server.models.clients import ClientRegister
 from server.models.users import UserRole, User, User_Pydantic, UserRegister_Pydantic, UserLogin_Pydantic
 from server.dependencies import verify_password, oauth2_scheme, get_password_hash
 
@@ -90,8 +91,8 @@ async def login_user(user: OAuth2PasswordRequestForm = Depends()):
 
 
 # Register user
-#@router.post("/register", response_model=User_Pydantic)
-#async def register_user(user: UserRegister_Pydantic):
+# @router.post("/register", response_model=User_Pydantic)
+# async def register_user(user: UserRegister_Pydantic):
 #    user_obj = await User.get(username=user.username)
 #    if user_obj:
 #        raise HTTPException(status_code=400, detail="Username already registered")
@@ -100,3 +101,9 @@ async def login_user(user: OAuth2PasswordRequestForm = Depends()):
 #        raise HTTPException(status_code=400, detail="Email already registered")
 #    user_obj = await User.create(**user.dict(exclude_unset=True), hash_password=get_password_hash(user.password))
 #    return await User_Pydantic.from_tortoise_orm(user_obj)
+
+# Register a new Client for a user at the API
+@router.post("/client/register", response_model=ClientRegister)
+async def register_client(current_user: User_Pydantic = Depends(get_current_active_user)):
+    reg_client = ClientRegister()
+    return reg_client.dict()

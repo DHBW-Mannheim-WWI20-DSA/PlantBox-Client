@@ -21,7 +21,7 @@ app.include_router(auth.router)
 register_tortoise(
     app,
     db_url=os.getenv("DB_URL"),
-    modules={"models": ["server.models.users"]},
+    modules={"models": ["server.models.users", "server.models.clients"]},
     generate_schemas=bool(os.getenv("DB_SCHEMAS")),
     add_exception_handlers=bool(os.getenv("DB_EXCEPTION_HANDLERS")),
 )
