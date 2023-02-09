@@ -1,135 +1,84 @@
-import multiprocessing
-import time
+# Import of the necessary libraries
 import os
+import time
+import asyncio
 from dotenv import load_dotenv
-from functions.readSensor import read_data_from_sensors
-from functions.pump import set_power
+from readSensor import read_data_from_sensors
+from controlUSB import set_power
+from websocket import create_connection
+
+# Define global variables
+global_buffer = list()
 
 
-class StreamBuffer:
-    def __init__(self, size: int = 10, sleep_time_sec: int = 1):
-        self.buffer: list = list()  # Init empty Buffer
-        self.sendBuffer: list = list()
-        self.size = size
-        self.sleep_time_sec = sleep_time_sec
-        self.min_moisture: float = 0.0
-        self.max_moisture: float = 0.0
-        self.storage_multiplier: int = 1
-        self.secure_margin: float = 5.0
-        self.latest_send_time: float = 0.0
-        self.queue = multiprocessing.Queue()
-        self.exit = multiprocessing.Event()
-
-    # Method to add Data to the Buffer
-    def add_data(self, item):
-        """
-        :param item: Item to add to the Buffer
-        :return: None
-        """
-        timestamp = time.time()
-        if len(self.buffer) == self.size:
-            self.buffer.pop(0)
-        self.buffer.append([timestamp, round(item, 2)])
-        self.queue.put(self.buffer)
-
-    # Method to get the Buffer
-    def get_data(self):
-        """
-        :return: last item in the buffer
-        """
-        return self.queue.get()
-
-    # Method to read all Data from the Buffer
-    def read_all_data(self):
-        """
-        :return: Buffer
-        """
-        return self.buffer
-
-    def run_writing_process(self):
-        while not self.exit.is_set():
-            item = read_data_from_sensors()
-            self.add_data(item)
-            time.sleep(self.sleep_time_sec)
-        self.queue.put(None)
-
-    def run_processing_process(self):
-        while True:
-            item = self.get_data()
-            if item is None:
-                break
-            print("all Items: " + str(item))
-            # Control the Pump
-            control_process = multiprocessing.Process(target=self.run_control_pump, args=(item,))
-            # control_process.start()
-            #  Send Data to the Server
-            send_process = multiprocessing.Process(target=self.run_send_data, args=(item,))
-            send_process.start()
-            # Sleep
-            time.sleep(self.sleep_time_sec * self.storage_multiplier)
-
-    # Method to control the Pump depending on the Data and the Environment Variables as Subprocess from a subprocess
-    def run_control_pump(self, item: list[int, float]):
-        """
-        :param item: Item to process
-        :return: None
-        """
-        # Loading of the Environment Variables
-        if self.min_moisture is None:
-            load_dotenv()
-            self.min_moisture = float(int(os.environ.get('MIN_MOISTURE')))
-        if self.max_moisture is None:
-            load_dotenv()
-            self.max_moisture = float(int(os.environ.get('MAX_MOISTURE')))
-        # get last entry of the Buffer
-        last_entry = item[-1]
-        print("last entry: " + str(last_entry))
-        # Activate Pump if the last entry is smaller than the minimum moisture
-        if last_entry[1] < self.min_moisture + self.secure_margin:
-            print(f'{time.ctime(last_entry[0])} - Pump Active - Moisture: {last_entry[1]} ')
-            # Activate Pump
-            set_power(True)
-            # Decrease the sleep time to 1 second
-            self.sleep_time_sec = 1
-        # Deactivate Pump if the last entry is bigger than the maximum moisture
-        elif last_entry[1] >= self.max_moisture - self.secure_margin:
-            print(f'{time.ctime(last_entry[0])} - Pump Deactivate - Moisture: {last_entry[1]}')
-            # Deactivate Pump
-            set_power(False)
-            # Increase the sleep time to 10 seconds
-            self.sleep_time_sec = 10
-
-    # Method to send the Data to the Server
-    def run_send_data(self, last_item: list[int, float]):
-        """
-        :param last_item: Item to process
-        :return: None
-        """
-        self.queue.put(self.sendBuffer.append(last_item[-1]))
-
-        # Check if at least 5 Entries have been stored in send_buffer
-        if len(self.sendBuffer) >= 5:
-            # get the oldest 5 entries
-            local_send_buffer = self.sendBuffer[:4]
-            print("local send buffer: " + str(local_send_buffer))
-            # save latest send time
-            self.latest_send_time = local_send_buffer[-1][0]
+# Define async function to read data from the sensors
+async def run_data_to_buffer(buffer: list, sleep_time_sec: int = 1):
+    while True:
+        item_time = time.time()
+        item_value = read_data_from_sensors()
+        if len(buffer) == 10:
+            buffer.pop(0)
+        buffer.append([item_time, item_value])
+        await asyncio.sleep(sleep_time_sec)
 
 
-def start_processes(stream_buffer):
-    writing_process = multiprocessing.Process(target=stream_buffer.run_writing_process)
-    processing_process = multiprocessing.Process(target=stream_buffer.run_processing_process)
+# Define async function to control the pump
+async def run_pump_control(buffer: list, sleep_time_sec: int = 1, min_moisture: float = 40.0,
+                           max_moisture: float = 80.0):
+    while True:
+        if len(buffer) >= 5:
+            # Calculate the average of the last 5 values
+            average = sum([item[1] for item in buffer[-5:]]) / 5
+            print("Average Moisture: " + str(average))
+            # Check if the average is below the minimum value
+            if average < min_moisture:
+                set_power(True)
+            elif average >= max_moisture:
+                set_power(False)
+        await asyncio.sleep(sleep_time_sec)
 
-    writing_process.start()
-    processing_process.start()
 
-    try:
-        processing_process.join()
-    except KeyboardInterrupt:
-        stream_buffer.exit.set()
-        writing_process.join()
+# Define async function to send data to the server
+async def run_data_to_server(buffer: list, sleep_time_sec: int = 1):
+    load_dotenv()
+    while True:
+        # Check if the buffer is not empty and have at least 5 values
+        if len(buffer) >= 5:
+            # get the last 5 values
+            last_five = buffer[-5:]
+            # prepare the data for the server transmission
+            data = {
+                "auth_token": os.getenv('AUTH_TOKEN'),
+                "time": [item[0] for item in last_five],
+                "value": [item[1] for item in last_five]
+            }
+            print(data)
+            # establish the connection to the server
+            ws = create_connection(os.getenv('SERVER_URL'))
+            # send the data to the server
+            ws.send(str(data))
+            # Wait for the server response
+            result = ws.recv()
+            if result == "200":
+                print("Data sent to server")
+                buffer[:] = buffer[-len(buffer) + 5:]
+            else:
+                print("Error while sending data to server")
+            # close the connection to the server
+            ws.close()
+        await asyncio.sleep(sleep_time_sec)
 
 
+# Define main function
+async def main():
+    # Starte alle asynchronen Funktionen
+    task1 = asyncio.create_task(run_data_to_buffer())
+    task2 = asyncio.create_task(run_pump_control())
+    task3 = asyncio.create_task(run_data_to_server())
+
+    await asyncio.gather(task1, task2, task3)
+
+
+# Run the main function
 if __name__ == '__main__':
-    stream_buffer = StreamBuffer(10)
-    start_processes(stream_buffer)
+    asyncio.run(main())
