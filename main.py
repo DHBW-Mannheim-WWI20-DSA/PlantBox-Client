@@ -104,16 +104,7 @@ class StreamBuffer:
         :param item: Item to process
         :return: None
         """
-
-        # get last entry of the Buffer
-        try:
-            last_entries = item[-1 * self.storage_multiplier]  # get last entries depending on the storage multiplier
-        except IndexError:
-            last_entries = item[-1]
-        print("last entries: " + str(last_entries))
-        # Save time from last send entry
-        time.sleep(self.sleep_time_sec * self.storage_multiplier)
-
+        print("send Data: " + str(item))
 
 def start_processes(stream_buffer):
     writing_process = multiprocessing.Process(target=stream_buffer.run_writing_process)
