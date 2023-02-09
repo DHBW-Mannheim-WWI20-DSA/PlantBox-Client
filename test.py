@@ -18,14 +18,25 @@ class StreamBuffer:
         :param item: Item to add to the Buffer
         :return: None
         """
-        self.queue.put([time.time(), round(item, 2)])
+        timestamp = time.time()
+        if len(self.buffer) == self.size:
+            self.buffer.pop(0)
+        self.buffer.append([timestamp, round(item, 2)])
+        self.queue.put(self.buffer)
 
     # Method to get the Buffer
     def get_data(self):
         """
-        :return: Buffer
+        :return: last item in the buffer
         """
         return self.queue.get()
+
+    # Method to read all Data from the Buffer
+    def read_all_data(self):
+        """
+        :return: Buffer
+        """
+        return self.buffer
 
     def run_writing_process(self):
         while not self.exit.is_set():
