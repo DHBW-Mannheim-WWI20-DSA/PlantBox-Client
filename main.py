@@ -3,7 +3,7 @@ import time
 import os
 from dotenv import load_dotenv
 from functions.readSensor import read_data_from_sensors
-
+from functions.pump import set_power
 
 class StreamBuffer:
     def __init__(self, size: int = 10, sleep_time_sec: int = 10):
@@ -13,6 +13,7 @@ class StreamBuffer:
         self.min_moisture: float = 0.0
         self.max_moisture: float = 0.0
         self.storage_multiplier: int = 3
+        self.secure_margin: float = 5.0
         self.queue = multiprocessing.Queue()
         self.exit = multiprocessing.Event()
 
@@ -71,8 +72,16 @@ class StreamBuffer:
             self.max_moisture = float(int(os.environ.get('MAX_MOISTURE')))
         # get last entry of the Buffer
         last_entry = item[-1]
-        # Print last entry of the Buffer
-        print(last_entry)
+        # Activate Pump if the last entry is smaller than the minimum moisture
+        if last_entry[1] < self.min_moisture + self.secure_margin:
+            print(f'{time.ctime(last_entry[0])} - Activate Pump - Moisture: {last_entry[1]} ')
+            # Activate Pump
+            set_power(True)
+        # Deactivate Pump if the last entry is bigger than the maximum moisture
+        elif last_entry[1] > self.max_moisture - self.secure_margin:
+            print(f'{time.ctime(last_entry[0])} - Deactivate Pump - Moisture: {last_entry[1]}')
+            # Deactivate Pump
+            set_power(False)
 
 
 def start_processes(stream_buffer):

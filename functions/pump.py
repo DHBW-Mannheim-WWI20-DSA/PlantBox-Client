@@ -29,22 +29,11 @@ def set_power(state: bool):
     # Add the on/off option based on the state
     if state:
         command.append(1)
+        return "Power on"
     else:
         command.append(0)
-
-    # Run the command and capture the output
-    output = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-    # Check for errors
-    if output.returncode != 0:
-        raise Exception(f'Error running usb-power-control: {output.stderr.decode()}')
-
-
-# Define Function to toggle the USB Port which is connected to the Pump
-def control_pump(enable: bool):
-    pass
+        return "Power off"
 
 
 if __name__ == '__main__':
-    control_pump(True)
-    # control_pump(False)
+    set_power(True)
