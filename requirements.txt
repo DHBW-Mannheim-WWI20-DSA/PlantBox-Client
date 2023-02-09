@@ -1,18 +1,9 @@
-# Standard-Libaries
+# Basic Python Packages
 python-dotenv
-requests
-RPi.GPIO
 
-# Database Libaries
-pydantic[email]
-tortoise-orm
+# Read Data Packages
+smbus2
 
-# Basic Fast-Api App
+# FastAPI - Package for building APIs
 uvicorn
 fastapi
-python-multipart
-
-# Security
-passlib[bcrypt]
-python-jose[cryptography]
-pywinusb
