@@ -5,10 +5,10 @@ from functions.readSensor import read_data_from_sensors
 
 
 class StreamBuffer:
-    def __init__(self, size):
+    def __init__(self, size: int = 10, sleep_time_sec: int = 10):
+        self.buffer: list = list()  # Init empty Buffer
         self.size = size
-        self.buffer = []
-        self.sleep_time_sec = 10
+        self.sleep_time_sec = sleep_time_sec
         self.queue = multiprocessing.Queue()
         self.exit = multiprocessing.Event()
 
