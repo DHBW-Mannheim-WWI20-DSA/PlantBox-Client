@@ -1,18 +1,3 @@
-# Standard-Libaries
 python-dotenv
-requests
-RPi.GPIO
-
-# Database Libaries
-pydantic[email]
-tortoise-orm
-
-# Basic Fast-Api App
-uvicorn
-fastapi
-python-multipart
-
-# Security
-passlib[bcrypt]
-python-jose[cryptography]
-pywinusb
+smbus2
+websocket-client
