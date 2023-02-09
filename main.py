@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from functions.readSensor import read_data_from_sensors
 from functions.pump import set_power
 
+
 class StreamBuffer:
     def __init__(self, size: int = 10, sleep_time_sec: int = 10):
         self.buffer: list = list()  # Init empty Buffer
@@ -55,12 +56,13 @@ class StreamBuffer:
             item = self.get_data()
             if item is None:
                 break
-            print(item)
-            self.run_control_pump(item)  # replace this with your function that processes data
+            print("all Items: " + str(item))
+            # self.run_control_pump(item)  # Control the Pump
+            self.run_send_data(item)  # Send Data to the Server
             time.sleep(self.sleep_time_sec * self.storage_multiplier)
 
     # Method to control the Pump depending on the Data and the Environment Variables as Subprocess from a subprocess
-    def run_control_pump(self, item: list[int, float]):
+    async def run_control_pump(self, item: list[int, float]):
         """
         :param item: Item to process
         :return: None
@@ -74,7 +76,7 @@ class StreamBuffer:
             self.max_moisture = float(int(os.environ.get('MAX_MOISTURE')))
         # get last entry of the Buffer
         last_entry = item[-1]
-        print("last entry: "+ last_entry)
+        print("last entry: " + str(last_entry))
         # Activate Pump if the last entry is smaller than the minimum moisture
         if last_entry[1] < self.min_moisture + self.secure_margin:
             print(f'{time.ctime(last_entry[0])} - Pump Active - Moisture: {last_entry[1]} ')
@@ -89,6 +91,16 @@ class StreamBuffer:
             set_power(False)
             # Increase the sleep time to 10 seconds
             self.sleep_time_sec = 10
+
+    # Method to send the Data to the Server
+    async def run_send_data(self, item: list[int, float]):
+        """
+        :param item: Item to process
+        :return: None
+        """
+        # get last entry of the Buffer
+        last_entries = item[-1 * self.storage_multiplier]  # get last entries depending on the storage multiplier
+        print("last entries: " + str(last_entries))
 
 
 def start_processes(stream_buffer):
