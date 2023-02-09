@@ -17,7 +17,7 @@ class StreamBuffer:
         timestamp = time()
         if len(self.buffer) == self.size:
             self.buffer.pop(0)
-        self.buffer.append([timestamp, item])
+        self.buffer.append([timestamp, round(item, 2)])
 
     # Method to get the Buffer
     def get_buffer(self):

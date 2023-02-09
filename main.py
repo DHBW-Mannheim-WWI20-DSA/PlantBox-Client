@@ -19,6 +19,7 @@ def worker_gather_Data(streambuffer: StreamBuffer, sleep_time_sec: int, stop_eve
         streambuffer.add(soil_moisture)
         # Wait for sleep_time_sec seconds
         time.sleep(sleep_time_sec)
+        print(streambuffer.get_buffer())
 
 
 # Define Sub-Procedure for sending the Data to the Server
@@ -51,7 +52,7 @@ def main():
     # Start multiple worker processes
     processes = [
         multiprocessing.Process(target=worker_gather_Data, args=(streambuffer, sleep_time_sec, stop_event)),
-        multiprocessing.Process(target=worker_send_Data, args=(streambuffer, sleep_time_sec, stop_event))
+        # multiprocessing.Process(target=worker_send_Data, args=(streambuffer, sleep_time_sec, stop_event))
     ]
     for process in processes:
         process.start()
