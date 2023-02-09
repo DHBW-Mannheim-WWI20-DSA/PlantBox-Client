@@ -12,6 +12,7 @@ class StreamBuffer:
         self.sleep_time_sec = sleep_time_sec
         self.min_moisture: float = 0.0
         self.max_moisture: float = 0.0
+        self.storage_multiplier: int = 3
         self.queue = multiprocessing.Queue()
         self.exit = multiprocessing.Event()
 
@@ -54,7 +55,7 @@ class StreamBuffer:
             if item is None:
                 break
             self.run_control_pump(item)  # replace this with your function that processes data
-            time.sleep(self.sleep_time_sec * 5)
+            time.sleep(self.sleep_time_sec * storage_multiplier)
 
     # Method to control the Pump depending on the Data and the Environment Variables as Subprocess from a subprocess
     def run_control_pump(self, item: list[int, float]):
