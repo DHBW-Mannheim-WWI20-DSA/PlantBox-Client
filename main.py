@@ -59,8 +59,8 @@ def main():
     try:
         # Do some other work here
         while True:
-            print("Main process is running")
-            time.sleep(1)
+            print(streambuffer.get_buffer())
+            time.sleep(sleep_time_sec)
 
     except KeyboardInterrupt:
         # Set the stop event to terminate all worker processes
