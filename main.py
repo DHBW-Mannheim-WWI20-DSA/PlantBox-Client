@@ -58,7 +58,7 @@ class StreamBuffer:
                 break
             print("all Items: " + str(item))
             # self.run_control_pump(item)  # Control the Pump
-            self.run_send_data(item)  # Send Data to the Server
+            await self.run_send_data(item)  # Send Data to the Server
             time.sleep(self.sleep_time_sec * self.storage_multiplier)
 
     # Method to control the Pump depending on the Data and the Environment Variables as Subprocess from a subprocess
@@ -98,6 +98,7 @@ class StreamBuffer:
         :param item: Item to process
         :return: None
         """
+        time.sleep(self.sleep_time_sec * self.storage_multiplier)
         # get last entry of the Buffer
         last_entries = item[-1 * self.storage_multiplier]  # get last entries depending on the storage multiplier
         print("last entries: " + str(last_entries))
