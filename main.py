@@ -31,9 +31,9 @@ async def run_pump_control(buffer: list, sleep_time_sec: int = 1, min_moisture: 
             average = sum([item[1] for item in buffer[-5:]]) / 5
             print("Average Moisture: " + str(average))
             # Check if the average is below the minimum value
-            if average < min_moisture:
+            if buffer[-1][1] < min_moisture:
                 set_power(True)
-            elif average >= max_moisture:
+            elif buffer[-1][1] >= max_moisture:
                 set_power(False)
         await asyncio.sleep(sleep_time_sec)
 
@@ -54,27 +54,30 @@ async def run_data_to_server(buffer: list, sleep_time_sec: int = 1):
             }
             print(data)
             # establish the connection to the server
-            ws = create_connection(os.getenv('SERVER_URL'))
-            # send the data to the server
-            ws.send(str(data))
-            # Wait for the server response
-            result = ws.recv()
-            if result == "200":
-                print("Data sent to server")
-                buffer[:] = buffer[-len(buffer) + 5:]
-            else:
-                print("Error while sending data to server")
-            # close the connection to the server
-            ws.close()
+            try:
+                ws = create_connection(os.getenv('SERVER_URL'))
+                # send the data to the server
+                ws.send(str(data))
+                # Wait for the server response
+                result = ws.recv()
+                if result == "200":
+                    print("Data sent to server")
+                    buffer[:] = buffer[-len(buffer) + 5:]
+                else:
+                    print("Error while sending data to server")
+                # close the connection to the server
+                ws.close()
+            except Exception as e:
+                print(e)
         await asyncio.sleep(sleep_time_sec)
 
 
 # Define main function
 async def main():
     # Starte alle asynchronen Funktionen
-    task1 = asyncio.create_task(run_data_to_buffer())
-    task2 = asyncio.create_task(run_pump_control())
-    task3 = asyncio.create_task(run_data_to_server())
+    task1 = asyncio.create_task(run_data_to_buffer(global_buffer))
+    task2 = asyncio.create_task(run_pump_control(global_buffer))
+    task3 = asyncio.create_task(run_data_to_server(global_buffer))
 
     await asyncio.gather(task1, task2, task3)
 
