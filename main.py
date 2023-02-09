@@ -61,6 +61,7 @@ class StreamBuffer:
     # Method to control the Pump depending on the Data and the Environment Variables as Subprocess from a subprocess
     def run_control_pump(self, item: list[int, float]):
         """
+        :param item: Item to process
         :return: None
         """
         # Loading of the Environment Variables
@@ -74,14 +75,18 @@ class StreamBuffer:
         last_entry = item[-1]
         # Activate Pump if the last entry is smaller than the minimum moisture
         if last_entry[1] < self.min_moisture + self.secure_margin:
-            print(f'{time.ctime(last_entry[0])} - Activate Pump - Moisture: {last_entry[1]} ')
+            print(f'{time.ctime(last_entry[0])} - Pump Active - Moisture: {last_entry[1]} ')
             # Activate Pump
             set_power(True)
+            # Decrease the sleep time to 1 second
+            self.sleep_time_sec = 1
         # Deactivate Pump if the last entry is bigger than the maximum moisture
         elif last_entry[1] > self.max_moisture - self.secure_margin:
-            print(f'{time.ctime(last_entry[0])} - Deactivate Pump - Moisture: {last_entry[1]}')
+            print(f'{time.ctime(last_entry[0])} - Pump Deactivate - Moisture: {last_entry[1]}')
             # Deactivate Pump
             set_power(False)
+            # Increase the sleep time to 10 seconds
+            self.sleep_time_sec = 10
 
 
 def start_processes(stream_buffer):
