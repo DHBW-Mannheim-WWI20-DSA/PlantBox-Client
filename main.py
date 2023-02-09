@@ -15,6 +15,7 @@ class StreamBuffer:
         self.max_moisture: float = 0.0
         self.storage_multiplier: int = 3
         self.secure_margin: float = 5.0
+        self.latest_send_time: float = 0.0
         self.queue = multiprocessing.Queue()
         self.exit = multiprocessing.Event()
 
@@ -110,6 +111,9 @@ class StreamBuffer:
         except IndexError:
             last_entries = item[-1]
         print("last entries: " + str(last_entries))
+        # Save time from last send entry
+
+        self.latest_send_time = last_entries[-1][0]
 
 
 def start_processes(stream_buffer):
