@@ -57,8 +57,13 @@ class StreamBuffer:
             if item is None:
                 break
             print("all Items: " + str(item))
-            # self.run_control_pump(item)  # Control the Pump
-            await self.run_send_data(item)  # Send Data to the Server
+            # Control the Pump
+            control_process = multiprocessing.Process(target=self.run_control_pump, args=(item,))
+            control_process.start()
+            #  Send Data to the Server
+            send_process = multiprocessing.Process(target=self.run_send_data, args=(item,))
+            send_process.start()
+            # Sleep
             time.sleep(self.sleep_time_sec * self.storage_multiplier)
 
     # Method to control the Pump depending on the Data and the Environment Variables as Subprocess from a subprocess
