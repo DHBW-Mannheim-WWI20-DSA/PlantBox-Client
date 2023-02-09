@@ -1,6 +1,7 @@
 import multiprocessing
 import time
-
+import os
+from dotenv import load_dotenv
 from functions.readSensor import read_data_from_sensors
 
 
@@ -9,6 +10,8 @@ class StreamBuffer:
         self.buffer: list = list()  # Init empty Buffer
         self.size = size
         self.sleep_time_sec = sleep_time_sec
+        self.min_moisture: float = 0.0
+        self.max_moisture: float = 0.0
         self.queue = multiprocessing.Queue()
         self.exit = multiprocessing.Event()
 
@@ -50,8 +53,25 @@ class StreamBuffer:
             item = self.get_data()
             if item is None:
                 break
-            print(item)  # replace this with your function that processes data
+            self.run_control_pump(item)  # replace this with your function that processes data
             time.sleep(self.sleep_time_sec * 5)
+
+    # Method to control the Pump depending on the Data and the Environment Variables as Subprocess from a subprocess
+    def run_control_pump(self, item: list[int, float]):
+        """
+        :return: None
+        """
+        # Loading of the Environment Variables
+        if self.min_moisture is None:
+            load_dotenv()
+            self.min_moisture = float(int(os.environ.get('MIN_MOISTURE')))
+        if self.max_moisture is None:
+            load_dotenv()
+            self.max_moisture = float(int(os.environ.get('MAX_MOISTURE')))
+        # get last entry of the Buffer
+        last_entry = item[-1]
+        # Print last entry of the Buffer
+        print(last_entry)
 
 
 def start_processes(stream_buffer):

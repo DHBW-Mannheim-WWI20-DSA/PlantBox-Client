@@ -6,5 +6,8 @@ smbus2
 pyudev
 
 # FastAPI - Package for building APIs
+requests
 uvicorn
+jinja2
+python-multipart
 fastapi

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %} {% endblock %}</title>
+    <link href="{{ url_for('static', path='/styles.css') }}" rel="stylesheet">
+    <link rel="icon" href="{{ url_for('static', path='/image/logo.png') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN"
+            crossorigin="anonymous"></script>
+</head>
+<body>
+<script>
+    function createPopupWin(pageURL, pageTitle,
+                            popupWinWidth, popupWinHeight) {
+        var left = (screen.width);
+        var top = (screen.height);
+        var myWindow = window.open(pageURL, pageTitle,
+            'resizable=no, width=' + popupWinWidth
+            + ', height=' + popupWinHeight + ', top='
+            + top + ', left=' + left);
+    }
+</script>
+<header class="p-3 border-bottom">
+    <div class="container">
+        <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+            <a href="#" class="d-flex align-items-center mb-2 mb-lg-0 text-dark text-decoration-none">
+                <img src="{{ url_for('static', path='/image/logo.png') }}"
+                     style="margin-right: 20px; margin-left: 20px; height: 40px; width: 40px;"/></img>
+            </a>
+
+            <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
+                <li><a href="" class="nav-link px-2 link-secondary">Plant Box</a></li>
+                <li><a href="" class="nav-link px-2 link-dark"></a></li>
+                <li><a href="" class="nav-link px-2 link-dark"></a></li>
+                <li><a href="" class="nav-link px-2 link-dark"></a></li>
+            </ul>
+
+            {% if logged_in %}
+            <div class="dropdown text-end">
+                <a href="#" class="d-block link-dark text-decoration-none dropdown-toggle" id="dropdownUser1"
+                   data-bs-toggle="dropdown" aria-expanded="false">
+                    <img src="https://github.com/mdo.png" alt="mdo" width="32" height="32" class="rounded-circle">
+                </a>
+                <ul class="dropdown-menu text-small" aria-labelledby="dropdownUser1">
+                    <li><a class="dropdown-item" href=""></a></li>
+                    <li>
+                        <hr class="dropdown-divider">
+                    </li>
+                    <li><a class="dropdown-item" href=""></a></li>
+                </ul>
+            </div>
+            {% else %}
+            <div class="dropdown text-end">
+                <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0" aria-labelledby="">
+                    <li><a class="nav-link link-dark" href=></a></li>
+                    <li><a class="nav-link link-dark" href=></a></li>
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</header>
+
+<!-- Begin page content -->
+<main class="flex-shrink-0">
+    {% block content %} {% endblock %}
+</main>
+
+<div class="container">
+    <footer class="py-3 my-4">
+        <ul class="nav justify-content-center border-bottom pb-3 mb-3">
+            <li class="nav-item"><a href="" class="nav-link px-2 text-muted">Home</a></li>
+            <li class="nav-item"><a href="" class="nav-link px-2 text-muted">Events</a></li>
+            <li class="nav-item"><a href="" class="nav-link px-2 text-muted">Shop</a></li>
+            <li class="nav-item"><a href="" class="nav-link px-2 text-muted">FAQs</a></li>
+            <li class="nav-item"><a href="" class="nav-link px-2 text-muted">About</a></li>
+        </ul>
+        <p class="text-center text-muted">&copy; Plant Box Company, Inc</p>
+    </footer>
+</div>
+
+</body>
+</html>
