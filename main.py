@@ -73,6 +73,7 @@ class StreamBuffer:
             self.max_moisture = float(int(os.environ.get('MAX_MOISTURE')))
         # get last entry of the Buffer
         last_entry = item[-1]
+        print(last_entry)
         # Activate Pump if the last entry is smaller than the minimum moisture
         if last_entry[1] < self.min_moisture + self.secure_margin:
             print(f'{time.ctime(last_entry[0])} - Pump Active - Moisture: {last_entry[1]} ')
@@ -81,7 +82,7 @@ class StreamBuffer:
             # Decrease the sleep time to 1 second
             self.sleep_time_sec = 1
         # Deactivate Pump if the last entry is bigger than the maximum moisture
-        elif last_entry[1] > self.max_moisture - self.secure_margin:
+        elif last_entry[1] >= self.max_moisture - self.secure_margin:
             print(f'{time.ctime(last_entry[0])} - Pump Deactivate - Moisture: {last_entry[1]}')
             # Deactivate Pump
             set_power(False)
