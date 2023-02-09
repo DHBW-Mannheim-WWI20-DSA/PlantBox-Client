@@ -3,6 +3,7 @@ python-dotenv
 
 # Read Data Packages
 smbus2
+pyudev
 
 # FastAPI - Package for building APIs
 uvicorn

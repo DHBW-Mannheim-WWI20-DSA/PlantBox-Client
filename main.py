@@ -1,86 +1,73 @@
-# Import of Libraries
 import multiprocessing
 import time
 
-# Import of Classes
-from classes.StreamBuffer import StreamBuffer
-
-# Import of Functions
-from functions.envFile import readEnvFile, writeEnvFile
 from functions.readSensor import read_data_from_sensors
 
 
-# Define Sub-Procedure for reading the Data from the Sensors
-def worker_gather_Data(streambuffer: StreamBuffer, sleep_time_sec: int, stop_event: multiprocessing.Event,
-                       queue: multiprocessing.Queue):
-    while not stop_event.is_set():
-        data = queue.get()
-        if data == 'STOP':
-            break
+class StreamBuffer:
+    def __init__(self, size):
+        self.size = size
+        self.buffer = []
+        self.sleep_time_sec = 10
+        self.queue = multiprocessing.Queue()
+        self.exit = multiprocessing.Event()
 
-        # Read Data from the Sensors
-        soil_moisture = read_data_from_sensors()
-        # Add the Data to the Buffer
-        streambuffer.add(soil_moisture)
-        # Wait for sleep_time_sec seconds
-        time.sleep(sleep_time_sec)
-        print(streambuffer.get_buffer())
+    # Method to add Data to the Buffer
+    def add_data(self, item):
+        """
+        :param item: Item to add to the Buffer
+        :return: None
+        """
+        timestamp = time.time()
+        if len(self.buffer) == self.size:
+            self.buffer.pop(0)
+        self.buffer.append([timestamp, round(item, 2)])
+        self.queue.put(self.buffer)
+
+    # Method to get the Buffer
+    def get_data(self):
+        """
+        :return: last item in the buffer
+        """
+        return self.queue.get()
+
+    # Method to read all Data from the Buffer
+    def read_all_data(self):
+        """
+        :return: Buffer
+        """
+        return self.buffer
+
+    def run_writing_process(self):
+        while not self.exit.is_set():
+            item = read_data_from_sensors()
+            self.add_data(item)
+            time.sleep(self.sleep_time_sec)
+        self.queue.put(None)
+
+    def run_processing_process(self):
+        while True:
+            item = self.get_data()
+            if item is None:
+                break
+            print(item)  # replace this with your function that processes data
+            time.sleep(self.sleep_time_sec * 5)
 
 
-# Define Sub-Procedure for sending the Data to the Server
-def worker_send_Data(streambuffer: StreamBuffer, sleep_time_sec: int, stop_event: multiprocessing.Event,
-                     queue: multiprocessing.Queue):
-    while not stop_event.is_set():
-        data = queue.get()
-        if data == 'STOP':
-            break
-        # Get the Buffer
-        buffer = streambuffer.get_buffer()
-        # Send the Data to the Server
-        print(buffer)
-        # Delete the Data from the Buffer
-        for entry in buffer:
-            try:
-                for i in range(len(streambuffer.buffer)):
-                    if streambuffer.buffer[i] == entry:
-                        streambuffer.buffer.pop(i)
-            except IndexError:
-                pass
-        # Wait for sleep_time_sec seconds
-        time.sleep(sleep_time_sec * 5)
+def start_processes(stream_buffer):
+    writing_process = multiprocessing.Process(target=stream_buffer.run_writing_process)
+    processing_process = multiprocessing.Process(target=stream_buffer.run_processing_process)
 
-
-def main():
-    # Define the Buffer
-    streambuffer = StreamBuffer(10)
-    # Define the sleep_time_sec
-    sleep_time_sec = 10
-    # Define the stop_event
-    stop_event = multiprocessing.Event()
-    # Define the Queue
-    queue = multiprocessing.Queue()
-
-    # Start multiple worker processes
-    processes = [
-        multiprocessing.Process(target=worker_gather_Data, args=(streambuffer, sleep_time_sec, stop_event, queue)),
-        # multiprocessing.Process(target=worker_send_Data, args=(streambuffer, sleep_time_sec, stop_event, queue))
-    ]
-    for process in processes:
-        process.start()
+    writing_process.start()
+    processing_process.start()
 
     try:
-        # Do some other work here
-        while True:
-            print(streambuffer.get_buffer())
-            time.sleep(sleep_time_sec)
-
+        processing_process.join()
     except KeyboardInterrupt:
-        # Set the stop event to terminate all worker processes
-        stop_event.set()
-
-    for process in processes:
-        process.join()
+        stream_buffer.exit.set()
+        writing_process.join()
 
 
 if __name__ == '__main__':
-    main()
+    stream_buffer = StreamBuffer(10)
+    start_processes(stream_buffer)
