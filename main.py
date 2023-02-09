@@ -11,8 +11,13 @@ from functions.readSensor import read_data_from_sensors
 
 
 # Define Sub-Procedure for reading the Data from the Sensors
-def worker_gather_Data(streambuffer: StreamBuffer, sleep_time_sec: int, stop_event: multiprocessing.Event):
+def worker_gather_Data(streambuffer: StreamBuffer, sleep_time_sec: int, stop_event: multiprocessing.Event,
+                       queue: multiprocessing.Queue):
     while not stop_event.is_set():
+        data = queue.get()
+        if data == 'STOP':
+            break
+
         # Read Data from the Sensors
         soil_moisture = read_data_from_sensors()
         # Add the Data to the Buffer
@@ -23,8 +28,12 @@ def worker_gather_Data(streambuffer: StreamBuffer, sleep_time_sec: int, stop_eve
 
 
 # Define Sub-Procedure for sending the Data to the Server
-def worker_send_Data(streambuffer: StreamBuffer, sleep_time_sec: int, stop_event: multiprocessing.Event):
+def worker_send_Data(streambuffer: StreamBuffer, sleep_time_sec: int, stop_event: multiprocessing.Event,
+                     queue: multiprocessing.Queue):
     while not stop_event.is_set():
+        data = queue.get()
+        if data == 'STOP':
+            break
         # Get the Buffer
         buffer = streambuffer.get_buffer()
         # Send the Data to the Server
@@ -48,11 +57,13 @@ def main():
     sleep_time_sec = 10
     # Define the stop_event
     stop_event = multiprocessing.Event()
+    # Define the Queue
+    queue = multiprocessing.Queue()
 
     # Start multiple worker processes
     processes = [
-        multiprocessing.Process(target=worker_gather_Data, args=(streambuffer, sleep_time_sec, stop_event)),
-        # multiprocessing.Process(target=worker_send_Data, args=(streambuffer, sleep_time_sec, stop_event))
+        multiprocessing.Process(target=worker_gather_Data, args=(streambuffer, sleep_time_sec, stop_event, queue)),
+        # multiprocessing.Process(target=worker_send_Data, args=(streambuffer, sleep_time_sec, stop_event, queue))
     ]
     for process in processes:
         process.start()
