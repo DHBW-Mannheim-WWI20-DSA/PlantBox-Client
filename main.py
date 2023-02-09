@@ -9,11 +9,12 @@ from functions.pump import set_power
 class StreamBuffer:
     def __init__(self, size: int = 10, sleep_time_sec: int = 10):
         self.buffer: list = list()  # Init empty Buffer
+        self.sendBuffer: list = list()
         self.size = size
         self.sleep_time_sec = sleep_time_sec
         self.min_moisture: float = 0.0
         self.max_moisture: float = 0.0
-        self.storage_multiplier: int = 3
+        self.storage_multiplier: int = 1
         self.secure_margin: float = 5.0
         self.latest_send_time: float = 0.0
         self.queue = multiprocessing.Queue()
@@ -60,9 +61,9 @@ class StreamBuffer:
             print("all Items: " + str(item))
             # Control the Pump
             control_process = multiprocessing.Process(target=self.run_control_pump, args=(item,))
-            control_process.start()
+            # control_process.start()
             #  Send Data to the Server
-            send_process = multiprocessing.Process(target=self.run_send_data, args=(item,))
+            send_process = multiprocessing.Process(target=self.run_send_data, args=(item[-1],))
             send_process.start()
             # Sleep
             time.sleep(self.sleep_time_sec * self.storage_multiplier)
@@ -99,12 +100,21 @@ class StreamBuffer:
             self.sleep_time_sec = 10
 
     # Method to send the Data to the Server
-    def run_send_data(self, item: list[int, float]):
+    def run_send_data(self, last_item: list[int, float]):
         """
-        :param item: Item to process
+        :param last_item: Item to process
         :return: None
         """
-        print("send Data: " + str(item))
+        self.queue.put(self.sendBuffer.append(last_item))
+
+        # Check if at least 5 Entries have been stored in send_buffer
+        if len(self.sendBuffer) >= 5:
+            # get the oldest 5 entries
+            local_send_buffer = self.sendBuffer[:4]
+            print("local send buffer: " + str(local_send_buffer))
+            # save latest send time
+            self.latest_send_time = local_send_buffer[-1][0]
+
 
 def start_processes(stream_buffer):
     writing_process = multiprocessing.Process(target=stream_buffer.run_writing_process)
