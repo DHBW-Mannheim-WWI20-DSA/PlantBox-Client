@@ -1,6 +1,15 @@
 import subprocess
 
 
+def check_package_installed(package_name):
+    try:
+        output = subprocess.run(['dpkg-query', '-W', '-f=\'${Status}\n\'', package_name], stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        return True if 'install ok installed' in output.stdout.decode() else False
+    except:
+        return False
+
+
 def install_package(package_name):
     # The command to run apt-get
     command = ['sudo', 'apt-get', 'install', '-y', package_name]
@@ -13,15 +22,15 @@ def install_package(package_name):
         raise Exception(f'Error installing package {package_name}: {output.stderr.decode()}')
 
 
-def set_power(state):
+def set_power(state: bool):
     # The command to run usb-power-control
-    command = ['sudo', 'usb-power-control', '--bus', '1', '--device', '1']
+    command = ['sudo', 'uhubctl', '-l', '2', '-a']
 
     # Add the on/off option based on the state
     if state:
-        command.append('--on')
+        command.append(1)
     else:
-        command.append('--off')
+        command.append(0)
 
     # Run the command and capture the output
     output = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -33,17 +42,7 @@ def set_power(state):
 
 # Define Function to toggle the USB Port which is connected to the Pump
 def control_pump(enable: bool):
-    # Check if the usb-power-control package is installed
-    try:
-        output = subprocess.run(['dpkg-query', '-W', '-f=\'${Status}\n\'', 'usb-power-control'], stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
-        if 'install ok installed' not in output.stdout.decode():
-            install_package('usb-power-control')
-    except:
-        install_package('usb-power-control')
-
-    # Turn on/off the USB port
-    set_power(enable)
+    pass
 
 
 if __name__ == '__main__':
