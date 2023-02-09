@@ -55,7 +55,7 @@ class StreamBuffer:
             if item is None:
                 break
             self.run_control_pump(item)  # replace this with your function that processes data
-            time.sleep(self.sleep_time_sec * storage_multiplier)
+            time.sleep(self.sleep_time_sec * self.storage_multiplier)
 
     # Method to control the Pump depending on the Data and the Environment Variables as Subprocess from a subprocess
     def run_control_pump(self, item: list[int, float]):
