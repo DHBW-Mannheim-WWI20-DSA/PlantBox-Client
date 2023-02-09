@@ -7,7 +7,7 @@ from functions.pump import set_power
 
 
 class StreamBuffer:
-    def __init__(self, size: int = 10, sleep_time_sec: int = 10):
+    def __init__(self, size: int = 10, sleep_time_sec: int = 1):
         self.buffer: list = list()  # Init empty Buffer
         self.sendBuffer: list = list()
         self.size = size
@@ -63,7 +63,7 @@ class StreamBuffer:
             control_process = multiprocessing.Process(target=self.run_control_pump, args=(item,))
             # control_process.start()
             #  Send Data to the Server
-            send_process = multiprocessing.Process(target=self.run_send_data, args=(item[-1],))
+            send_process = multiprocessing.Process(target=self.run_send_data, args=(item,))
             send_process.start()
             # Sleep
             time.sleep(self.sleep_time_sec * self.storage_multiplier)
@@ -105,7 +105,7 @@ class StreamBuffer:
         :param last_item: Item to process
         :return: None
         """
-        self.queue.put(self.sendBuffer.append(last_item))
+        self.queue.put(self.sendBuffer.append(last_item[-1]))
 
         # Check if at least 5 Entries have been stored in send_buffer
         if len(self.sendBuffer) >= 5:
