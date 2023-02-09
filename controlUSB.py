@@ -8,10 +8,10 @@ def set_power(state: bool):
 
     # Add the on/off option based on the state
     if state:
-        command.append(1)
+        command.append("1")
         print("Power on")
     else:
-        command.append(0)
+        command.append("0")
         print("Power off")
 
     # Run the command and capture the output
