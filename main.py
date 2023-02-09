@@ -104,7 +104,7 @@ class StreamBuffer:
         :param item: Item to process
         :return: None
         """
-        time.sleep(self.sleep_time_sec * self.storage_multiplier)
+
         # get last entry of the Buffer
         try:
             last_entries = item[-1 * self.storage_multiplier]  # get last entries depending on the storage multiplier
@@ -112,8 +112,7 @@ class StreamBuffer:
             last_entries = item[-1]
         print("last entries: " + str(last_entries))
         # Save time from last send entry
-
-        self.latest_send_time = last_entries[-1][0]
+        time.sleep(self.sleep_time_sec * self.storage_multiplier)
 
 
 def start_processes(stream_buffer):
