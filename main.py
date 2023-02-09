@@ -105,7 +105,10 @@ class StreamBuffer:
         """
         time.sleep(self.sleep_time_sec * self.storage_multiplier)
         # get last entry of the Buffer
-        last_entries = item[-1 * self.storage_multiplier]  # get last entries depending on the storage multiplier
+        try:
+            last_entries = item[-1 * self.storage_multiplier]  # get last entries depending on the storage multiplier
+        except IndexError:
+            last_entries = item[-1]
         print("last entries: " + str(last_entries))
 
 
