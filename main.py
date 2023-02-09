@@ -55,6 +55,7 @@ class StreamBuffer:
             item = self.get_data()
             if item is None:
                 break
+                print(item)
             self.run_control_pump(item)  # replace this with your function that processes data
             time.sleep(self.sleep_time_sec * self.storage_multiplier)
 
